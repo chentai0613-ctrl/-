@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AS TAIPEI 鍍膜保固管理系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Roboto+Mono:wght@500;700&family=Playfair+Display:ital,wght@1,600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         :root { 
@@ -31,8 +32,7 @@
 
         .print-only { display: none; }
         
-        /* 
-           A4 單頁列印專用版面配置 (強制不跨頁)
+        /* A4 單頁列印專用版面配置 (強制不跨頁)
         */
         @media print {
             @page { 
@@ -143,6 +143,26 @@
             pointer-events: none;
             z-index: 0;
             white-space: nowrap;
+        }
+        
+        .print-report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .print-report-table th {
+            background-color: #f1f5f9;
+            color: #1e293b;
+            font-weight: 700;
+            padding: 10px;
+            font-size: 12px;
+            border: 1px solid #cbd5e1;
+        }
+        .print-report-table td {
+            padding: 10px;
+            font-size: 12px;
+            border: 1px solid #cbd5e1;
+            color: #334155;
         }
     </style>
 </head>
@@ -344,65 +364,67 @@
             window.print(); 
         };
 
-        window.setMode = (mode, data = null, isNew = false) => {
+        // 系統頁面切換控制核心 (多頁式單頁應用)
+        window.setMode = (mode, orderData = null, reset = false) => {
             window.currentMode = mode;
-            if (isNew) {
-                const today = new Date().toISOString().split('T')[0];
-                window.currentFormData = {
-                    id: `AS-${new Date().toISOString().slice(2,10).replace(/-/g,'')}-${(window.workOrders.length+1).toString().padStart(3,'0')}`,
-                    receiveDate: today, 
-                    deliveryDate: today,
-                    warrantyDate: '無保固',
-                    customerName: '', 
-                    customerPhone: '', 
-                    licensePlate: '',
-                    carBrand: 'Audi 奧迪', 
-                    carBrandCustom: '', 
-                    carModel: 'RS6/RS7', 
-                    carModelCustom: '',
-                    salesPerson: 'Audi', 
-                    salesPersonCustom: '', 
-                    paymentMethod: '現金', 
-                    needsInvoice: false,
-                    serviceItems: [{ name: '日本 AKUMA EVOLFE COAT', nameCustom: '', price: 0 }],
-                    notes: ''
-                };
-            } else if (data) { 
-                window.currentFormData = JSON.parse(JSON.stringify(data)); 
-            }
-            ['history', 'form', 'quote', 'printPreview'].forEach(m => {
-                const el = document.getElementById(`mode-${m}`);
-                if (el) el.classList.add('hidden');
-            });
-            if (mode === 'history') window.renderHistoryMode();
-            else if (mode === 'form') window.renderFormMode();
-            else if (mode === 'quote') window.renderQuoteMode();
-            else if (mode === 'printPreview') window.renderPrintPreview();
             
-            const target = document.getElementById(`mode-${mode}`);
-            if (target) target.classList.remove('hidden');
-            window.scrollTo(0,0);
+            document.getElementById('mode-history').classList.add('hidden');
+            document.getElementById('mode-form').classList.add('hidden');
+            document.getElementById('mode-quote').classList.add('hidden');
+            document.getElementById('mode-printPreview').classList.add('hidden');
+            
+            const targetEl = document.getElementById(`mode-${mode}`);
+            if (targetEl) targetEl.classList.remove('hidden');
+            
+            if (mode === 'form') {
+                if (reset || !window.currentFormData.id) {
+                    const newId = "AS-" + new Date().toISOString().slice(2, 10).replace(/-/g, "") + Math.floor(1000 + Math.random() * 9000);
+                    window.currentFormData = {
+                        id: newId,
+                        customerName: '',
+                        customerPhone: '',
+                        licensePlate: '',
+                        paymentMethod: '現金',
+                        carBrand: 'Porsche 保時捷',
+                        carBrandCustom: '',
+                        carModel: '911',
+                        carModelCustom: '',
+                        salesPerson: '小楊',
+                        salesPersonCustom: '',
+                        receiveDate: new Date().toISOString().split('T')[0],
+                        deliveryDate: new Date().toISOString().split('T')[0],
+                        warrantyDate: '無保固',
+                        needsInvoice: false,
+                        notes: '',
+                        serviceItems: [{ name: '日本 AKUMA EVOLFE COAT', price: 0 }]
+                    };
+                } else if (orderData) {
+                    window.currentFormData = JSON.parse(JSON.stringify(orderData));
+                }
+                window.renderFormMode();
+            } else if (mode === 'quote') {
+                if (orderData) {
+                    window.currentFormData = JSON.parse(JSON.stringify(orderData));
+                }
+                window.renderQuoteMode();
+            } else if (mode === 'history') {
+                window.renderHistoryMode();
+            } else if (mode === 'printPreview') {
+                window.renderPrintPreviewMode();
+            }
         };
 
-        window.renderPrintPreview = () => {
+        // 月度報表列印預覽
+        window.renderPrintPreviewMode = () => {
             const filtered = window.workOrders.filter(o => o.receiveDate && o.receiveDate.startsWith(window.currentFilterMonth));
             const monthlyRevenue = filtered.reduce((sum, o) => sum + window.calculateOrderTotal(o), 0);
-            const container = document.getElementById('mode-printPreview');
-            container.innerHTML = `
-                <div class="no-print mb-6 flex flex-col md:flex-row justify-between items-center bg-blue-50 p-6 rounded-3xl border border-blue-200 gap-4">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-blue-600 text-white p-2 rounded-xl">📊</div>
-                        <div>
-                            <p class="text-blue-950 font-black text-lg">月度營收報表預覽</p>
-                            <p class="text-xs text-blue-700 font-bold">當月共有 ${filtered.length} 筆案件記錄</p>
-                        </div>
-                    </div>
-                    <div class="flex gap-3 w-full md:w-auto">
-                        <button onclick="window.setMode('history')" class="flex-1 md:flex-none bg-white border-2 border-slate-200 px-6 py-3 rounded-2xl font-bold text-slate-600 hover:bg-slate-50">返回</button>
-                        <button onclick="window.handlePrint()" class="flex-1 md:flex-none bg-blue-600 text-white px-8 py-3 rounded-2xl font-black shadow-lg shadow-blue-100 hover:bg-blue-700">立即列印</button>
-                    </div>
+            
+            document.getElementById('mode-printPreview').innerHTML = `
+                <div class="no-print mb-6 text-center space-x-4">
+                    <button onclick="window.handlePrint()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-2xl shadow-lg transition-all">🖨️ 啟動列印報表</button>
+                    <button onclick="window.setMode('history')" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-8 rounded-2xl shadow-lg transition-all">返回工單總表</button>
                 </div>
-                <div class="print-container bg-white p-8 md:p-12 shadow-2xl border mx-auto mb-10">
+                <div class="print-container bg-white p-8 md:p-12 shadow-2xl border mx-auto mb-10 rounded-[2.5rem]">
                     <div class="flex justify-between items-start border-b-4 border-slate-900 pb-6 mb-8 print-header">
                         <div>
                             <h1 class="text-3xl font-black tracking-tighter text-slate-950 mb-1">AS TAIPEI 月度營收明細表</h1>
@@ -574,7 +596,7 @@
                                 <ul class="space-y-1.5 list-disc list-inside text-slate-700 font-bold">
                                     <li><span class="text-red-600 font-extrabold text-[15px]">施工後 48 小時內禁止洗車。</span></li>
                                     <li><span class="text-red-600 font-extrabold text-[15px]">施工後 7 天內避免使用強酸、強鹼及化學清潔劑。</span></li>
-                                    <li>建議使用中性洗車精，洗車後請立即擦乾車身，避免水漬、水垢形成。</li>
+                                    <li>建議使用中性洗車精，洗車精後請立即擦乾車身，避免水漬、水垢形成。</li>
                                     <li><span class="text-red-600 font-extrabold text-[15px]">施工完成後 1～2 週內，須回 AS TAIPEI 完成首次鍍膜檢測與養護。</span></li>
                                     <li>其後<span class="text-red-600 font-extrabold text-[15px]">每次回廠養護間隔不得超過 3 週</span>，逾期將影響保固權益。</li>
                                 </ul>
@@ -604,17 +626,36 @@
                             </div>
                         </div>
 
-                        <div class="mt-16 pt-10 border-t-2 border-slate-200 flex flex-col md:flex-row justify-between items-end gap-10 relative z-10 print-footer">
-                             <div class="flex flex-col items-center">
-                                 <div class="w-32 h-32 border-2 border-blue-100 rounded-full flex items-center justify-center mb-4 relative">
-                                    <div class="text-[9px] font-black text-blue-200 transform -rotate-12 text-center">AS TAIPEI<br>OFFICIAL SEAL</div>
-                                    <div class="absolute inset-0 border-4 border-blue-50 rounded-full m-1"></div>
+                        <!-- 頁尾蓋章欄與簽章區 (完美的置中與左右對稱設計) -->
+                        <div class="mt-16 pt-10 border-t-2 border-slate-200 flex flex-col md:flex-row justify-between items-center gap-10 relative z-10 print-footer">
+                             
+                             <!-- 公司用印章向量設計 (置中對齊) -->
+                             <div class="flex flex-col items-center justify-center text-center">
+                                 <div class="relative w-24 h-24 flex items-center justify-center mb-2">
+                                     <div class="absolute inset-0 rounded-full border-2 border-blue-400/30"></div>
+                                     <div class="absolute inset-1 rounded-full border border-dashed border-blue-400/20"></div>
+                                     <svg class="w-20 h-20 text-blue-400/80 transform rotate-[-6deg]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                         <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="2.5"/>
+                                         <circle cx="50" cy="50" r="39" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2"/>
+                                         <path id="curve" d="M 18,50 A 32,32 0 1,1 82,50" fill="none" />
+                                         <text fill="currentColor" font-size="7.5" font-weight="900" letter-spacing="3.5">
+                                             <textPath href="#curve" startOffset="50%" text-anchor="middle">AS TAIPEI</textPath>
+                                         </text>
+                                         <text x="50" y="52" fill="currentColor" font-size="8" font-weight="900" text-anchor="middle" letter-spacing="1">OFFICIAL</text>
+                                         <text x="50" y="63" fill="currentColor" font-size="8" font-weight="900" text-anchor="middle" letter-spacing="1">SEAL</text>
+                                     </svg>
                                  </div>
-                                 <p class="text-[9px] font-black uppercase text-slate-400 tracking-widest">公司用印章</p>
+                                 <p class="text-[9px] font-black uppercase text-slate-400 tracking-widest">公司用印章 / Certified Seal</p>
                              </div>
-                             <div class="text-right flex-grow">
-                                 <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">服務代表簽署</p>
-                                 <p class="text-4xl font-black italic text-blue-900 tracking-tighter">${salesDisplay}</p>
+
+                             <!-- 服務代表動態手寫置中簽章區 (100%對應接待人員名字) -->
+                             <div class="flex flex-col items-center justify-center text-center">
+                                 <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">服務代表簽署 / Authorized Signature</p>
+                                 <div class="h-16 flex items-center justify-center">
+                                     <span class="text-4xl font-black text-blue-800 italic tracking-widest select-none" style="font-family: 'Playfair Display', 'Noto Sans TC', sans-serif; transform: rotate(-3deg); display: inline-block; filter: drop-shadow(1px 1px 1px rgba(37,99,235,0.15));">
+                                         ${salesDisplay}
+                                     </span>
+                                 </div>
                              </div>
                         </div>
                     </div>
@@ -877,7 +918,6 @@
                 window.setMode('history'); 
             } catch (e) { 
                 console.error("雲端寫入失敗異常明細:", e);
-                // 直接將資料庫錯誤彈出顯示，供管理人員立即排除安全規則問題
                 window.showMessage(`❌ 雲端儲存失敗：${e.message || '請檢查 Firestore 規則 Rules 與讀寫設定。'}`); 
             }
         };

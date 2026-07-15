@@ -619,7 +619,7 @@
                             <!-- 加入官方 LINE 啟用電子保固區域 -->
                             <div class="bg-emerald-50/50 p-8 rounded-[2rem] border-2 border-emerald-100 shadow-sm mt-4 text-center">
                                 <h4 class="font-black text-slate-900 mb-2 tracking-widest uppercase text-base">📲 AS TAIPEI 官方 LINE 保固啟用認證</h4>
-                                <p class="text-sm text-slate-600 mb-6 font-bold">新客請掃描下方 QR Code 加入官方 LINE 帳號，<span class="text-rose-600 font-extrabold text-[15px]">加入後請拍下您的「紙本保固卡」發送給我們</span>以啟用線上電子保固。</p>
+                                <p class="text-sm text-slate-600 mb-6 font-bold"><span class="text-red-600 font-extrabold text-[15px]">新客</span>請掃描下方 QR Code 加入官方 LINE 帳號，<span class="text-red-600 font-extrabold text-[15px]">加入後請拍下您的「紙本保固卡」發送給我們</span>以啟用線上電子保固。</p>
                                 <div class="bg-white p-4 rounded-3xl inline-block border border-emerald-100 shadow-inner mb-4">
                                     <img src="L_gainfriends_2dbarcodes_BW.png" onerror="this.onerror=null; this.src='https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https%3A%2F%2Fline.me%2FR%2Fti%2Fp%2F%2540as7778';" alt="AS TAIPEI LINE QR Code" class="w-48 h-48 mx-auto object-contain">
                                 </div>
@@ -727,8 +727,8 @@
                                         </div>
                                         ` : ''}
                                         ${o.salesNotes && o.salesNotes.trim() !== '' ? `
-                                        <div class="text-[10px] text-rose-700 bg-rose-50/50 p-2 rounded-lg border border-rose-100/50 max-w-xs truncate" title="${o.salesNotes}">
-                                            <span class="font-bold text-rose-600">🔒 業務：</span>${o.salesNotes}
+                                        <div class="text-[10px] text-red-700 bg-red-50 p-2 rounded-lg border border-red-200 mb-1 max-w-xs truncate" title="${o.salesNotes}">
+                                            <span class="font-bold text-red-600">🔒 業務：</span>${o.salesNotes}
                                         </div>
                                         ` : ''}
                                         <div class="flex items-baseline gap-2 mt-2">
@@ -819,8 +819,8 @@
                             <textarea id="f-notes" rows="3" placeholder="輸入會顯示在單據上的備註事項..." class="w-full p-4 bg-slate-50 border rounded-2xl font-bold focus:ring-2 ring-blue-500 outline-none resize-none">${window.currentFormData.notes || ''}</textarea>
                         </div>
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black text-rose-500 uppercase flex items-center gap-1">🔒 業務備註 (僅內部人員可見，預覽與列印絕對隱藏)</label>
-                            <textarea id="f-salesNotes" rows="3" placeholder="輸入僅內部同仁看得到之交代細節或敏感資訊..." class="w-full p-4 bg-rose-50/50 border border-rose-100 text-rose-900 placeholder-rose-400 rounded-2xl font-bold focus:ring-2 ring-rose-500 outline-none resize-none">${window.currentFormData.salesNotes || ''}</textarea>
+                            <label class="text-[10px] font-black text-red-600 uppercase flex items-center gap-1">🔒 業務備註 (僅內部人員可見，預覽與列印絕對隱藏)</label>
+                            <textarea id="f-salesNotes" rows="3" placeholder="輸入僅內部同仁看得到之交代細節或敏感資訊..." class="w-full p-4 bg-red-50 border border-red-300 text-red-700 placeholder-red-400 rounded-2xl font-bold focus:ring-2 ring-red-500 outline-none resize-none">${window.currentFormData.salesNotes || ''}</textarea>
                         </div>
                     </div>
 

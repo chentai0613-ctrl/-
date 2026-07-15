@@ -396,6 +396,7 @@
                         warrantyDate: '無保固',
                         needsInvoice: false,
                         notes: '',
+                        salesNotes: '',
                         serviceItems: [{ name: '日本 AKUMA EVOLFE COAT', price: 0 }]
                     };
                 } else if (orderData) {
@@ -481,7 +482,7 @@
             const total = subtotal + tax;
 
             const brandDisplay = d.carBrand === '其他' ? d.carBrandCustom : d.carBrand;
-            const modelDisplay = d.carModel === '其他' ? d.carModelCustom : d.carModel;
+            const modelDisplay = (d.carModel === '其他' || d.carModel === '物理其他') ? d.carModelCustom : d.carModel;
             const salesDisplay = d.salesPerson === '其他' ? d.salesPersonCustom : d.salesPerson;
 
             container.innerHTML = `
@@ -713,14 +714,24 @@
                                     <td class="p-6 align-top">
                                         <div class="font-black text-slate-800 text-lg">${o.customerName} <span class="text-slate-400 text-sm font-normal">(${o.customerPhone || '-'})</span></div>
                                         <div class="font-black text-slate-700 uppercase text-xl">${o.licensePlate}</div>
-                                        <div class="text-xs text-slate-500 font-bold">${o.carBrand} ${o.carModel}</div>
+                                        <div class="text-xs text-slate-500 font-bold">${o.carBrand} ${(o.carModel === '其他' || o.carModel === '物理其他') ? o.carModelCustom : o.carModel}</div>
                                         ${o.warrantyDate && o.warrantyDate !== '無保固' ? `<span class="mt-2 inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-0.5 rounded-full text-[10px] font-black">🛡️ 保固至 ${o.warrantyDate}</span>` : ''}
                                     </td>
                                     <td class="p-6 align-top">
                                         <div class="text-[11px] text-slate-600 space-y-1 mb-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
                                             ${o.serviceItems.map(it => `• ${it.name === '其他' ? it.nameCustom : it.name}`).join('')}
                                         </div>
-                                        <div class="flex items-baseline gap-2">
+                                        ${o.notes && o.notes.trim() !== '' ? `
+                                        <div class="text-[10px] text-slate-600 bg-blue-50/50 p-2 rounded-lg border border-blue-100/50 mb-1 max-w-xs truncate" title="${o.notes}">
+                                            <span class="font-bold text-blue-600">📝 一般：</span>${o.notes}
+                                        </div>
+                                        ` : ''}
+                                        ${o.salesNotes && o.salesNotes.trim() !== '' ? `
+                                        <div class="text-[10px] text-rose-700 bg-rose-50/50 p-2 rounded-lg border border-rose-100/50 max-w-xs truncate" title="${o.salesNotes}">
+                                            <span class="font-bold text-rose-600">🔒 業務：</span>${o.salesNotes}
+                                        </div>
+                                        ` : ''}
+                                        <div class="flex items-baseline gap-2 mt-2">
                                             <span class="font-black text-slate-900 text-2xl">NT$ ${total.toLocaleString()}</span>
                                         </div>
                                     </td>
@@ -740,6 +751,7 @@
 
         window.renderFormMode = () => {
             const container = document.getElementById('mode-form');
+            const isModelOther = window.currentFormData.carModel === '其他' || window.currentFormData.carModel === '物理其他';
             container.innerHTML = `
                 <div class="bg-white p-6 md:p-10 rounded-[3rem] border shadow-xl space-y-10 no-print">
                     <div class="flex items-center gap-4 border-b pb-8">
@@ -774,7 +786,7 @@
                         <div class="space-y-1">
                             <label class="text-[10px] font-black text-slate-400 uppercase">型號</label>
                             <select id="f-carModel" onchange="window.toggleCustomInput('carModel', this.value)" class="w-full p-4 bg-slate-50 border rounded-2xl font-bold appearance-none"></select>
-                            <input type="text" id="f-carModelCustom" value="${window.currentFormData.carModelCustom||''}" placeholder="手寫輸入型號" class="w-full p-4 mt-2 bg-blue-50 border-blue-200 border rounded-2xl font-bold ${window.currentFormData.carModel==='其他'?'':'hidden'}">
+                            <input type="text" id="f-carModelCustom" value="${window.currentFormData.carModelCustom||''}" placeholder="手寫輸入型號" class="w-full p-4 mt-2 bg-blue-50 border-blue-200 border rounded-2xl font-bold ${isModelOther?'':'hidden'}">
                         </div>
                         <div class="space-y-1">
                             <label class="text-[10px] font-black text-slate-400 uppercase">接待人員</label>
@@ -801,9 +813,15 @@
                         </div>
                     </div>
                     
-                    <div class="space-y-2 mt-4">
-                        <label class="text-[10px] font-black text-slate-400 uppercase">備註事項 (選填)</label>
-                        <textarea id="f-notes" rows="3" placeholder="輸入特殊需求或提醒事項..." class="w-full p-4 bg-slate-50 border rounded-2xl font-bold focus:ring-2 ring-blue-500 outline-none resize-none">${window.currentFormData.notes || ''}</textarea>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-slate-400 uppercase">一般備註 (客戶可見，預覽與列印會顯示)</label>
+                            <textarea id="f-notes" rows="3" placeholder="輸入會顯示在單據上的備註事項..." class="w-full p-4 bg-slate-50 border rounded-2xl font-bold focus:ring-2 ring-blue-500 outline-none resize-none">${window.currentFormData.notes || ''}</textarea>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[10px] font-black text-rose-500 uppercase flex items-center gap-1">🔒 業務備註 (僅內部人員可見，預覽與列印絕對隱藏)</label>
+                            <textarea id="f-salesNotes" rows="3" placeholder="輸入僅內部同仁看得到之交代細節或敏感資訊..." class="w-full p-4 bg-rose-50/50 border border-rose-100 text-rose-900 placeholder-rose-400 rounded-2xl font-bold focus:ring-2 ring-rose-500 outline-none resize-none">${window.currentFormData.salesNotes || ''}</textarea>
+                        </div>
                     </div>
 
                     <div class="bg-slate-50 p-6 rounded-[2.5rem] border">
@@ -834,7 +852,8 @@
                     deliveryDate: document.getElementById('f-deliveryDate').value,
                     warrantyDate: document.getElementById('f-warrantyDate').value,
                     needsInvoice: document.getElementById('f-needsInvoice').checked,
-                    notes: document.getElementById('f-notes').value
+                    notes: document.getElementById('f-notes').value,
+                    salesNotes: document.getElementById('f-salesNotes').value
                 });
                 window.setMode('quote');
             };
@@ -843,7 +862,7 @@
         window.toggleCustomInput = (field, val) => { 
             const input = document.getElementById(`f-${field}Custom`); 
             if (input) { 
-                if (val === '其他') input.classList.remove('hidden'); 
+                if (val === '其他' || val === '物理其他') input.classList.remove('hidden'); 
                 else input.classList.add('hidden'); 
             } 
             if (field === 'carBrand') window.fillModels(val); 
@@ -853,7 +872,10 @@
             const sel = document.getElementById('f-carModel'); 
             if(!sel) return; 
             const models = CAR_DATABASE[brand] || []; 
-            sel.innerHTML = models.map(m => `<option value="${m}" ${window.currentFormData.carModel===m?'selected':''}>${m}</option>`).join('') + `<option value="物理其他">其他</option>`; 
+            const isModelOtherSelected = window.currentFormData.carModel === '其他' || window.currentFormData.carModel === '物理開頭' || window.currentFormData.carModel === '物理其他';
+            
+            sel.innerHTML = models.map(m => `<option value="${m}" ${window.currentFormData.carModel===m?'selected':''}>${m}</option>`).join('') + 
+                            `<option value="其他" ${isModelOtherSelected?'selected':''}>其他</option>`; 
             window.toggleCustomInput('carModel', sel.value); 
         };
 
@@ -947,6 +969,8 @@
                 "車牌": o.licensePlate, 
                 "品牌": o.carBrand, 
                 "接待": o.salesPerson, 
+                "一般備註": o.notes || "",
+                "業務備註": o.salesNotes || "",
                 "總額(含稅)": window.calculateOrderTotal(o) 
             })); 
             const ws = XLSX.utils.json_to_sheet(data); 
